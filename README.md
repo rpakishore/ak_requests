@@ -28,7 +28,6 @@
     - [2.1.1. Production](#211-production)
     - [2.1.2. Development](#212-development)
 - [3. Usage](#3-usage)
-  - [3.1. Development](#31-development)
 - [4. Roadmap](#4-roadmap)
 - [5. License](#5-license)
 - [6. Contact](#6-contact)
@@ -102,14 +101,6 @@ urls = ['https://reqres.in/api/users?page=2', 'https://reqres.in/api/unknown']
 responses = session.bulk_get(urls)
 
 ```
-
-### 3.1. Development
-
-1. Open the project directory in vscode
-2. Update the app name under `pyproject.toml`
-3. Change the folder name from `src\template_python` to `src\<app_name>`, and propate the changes to the subfolders.
-4. Review the dependencies under `pyproject.toml` and remove as needed.
-5. Remove unneeded dependencies from `src\<app_name>\`
 
 <!-- Roadmap -->
 ## 4. Roadmap
