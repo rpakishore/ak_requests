@@ -20,19 +20,19 @@ class Log(object):
         filehandler=logging.FileHandler(logfile, encoding="utf-8")
         filehandler.setFormatter(formatter)
         self.logger.addHandler(filehandler)
-    def debug(self, msg):
+    def debug(self, msg: str) -> None:
         self.logger.debug(msg)
-    def info(self, msg):
+    def info(self, msg: str) -> None:
         self.logger.info(msg)
-    def warning(self, msg):
+    def warning(self, msg: str) -> None:
         self.logger.warning(msg)
-    def error(self, msg):
+    def error(self, msg: str) -> None:
         self.logger.error(msg)
-    def critical(self, msg):
+    def critical(self, msg: str) -> None:
         self.logger.critical(msg)
-    def log(self, level, msg):
+    def log(self, level, msg: str) -> None:
         self.logger.log(level, msg)
-    def setLevel(self, level):
+    def setLevel(self, level) -> None:
         self.logger.setLevel(level)
-    def disable(self):
+    def disable(self) -> None:
         logging.disable(50)
