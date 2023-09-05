@@ -89,17 +89,18 @@ session = RequestsSession(log=False, retries=5, log_level='error')
 session.update_header({'Connection': 'keep-alive'})
 
 # set cookies
-session.update_cookies([{'has_recent_activity':'1'}])
+session.update_cookies([{'name':'has_recent_activity', 'value':'1'}])
 
 # Get requests
-session.get('https://example.com', data={}, proxy = {} ) # Can accept any requests parameters
+session.get('https://reqres.in/api/users?page=2', data={}, proxies = {} ) # Can accept any requests parameters
 
 # Change min time bet. requests
 session.MIN_REQUEST_GAP = 1.5 # seconds
 
 # Make bulk requests
-urls = ['https://example1.com', 'https://example2.com']
+urls = ['https://reqres.in/api/users?page=2', 'https://reqres.in/api/unknown']
 responses = session.bulk_get(urls)
+
 ```
 
 ### 3.1. Development
