@@ -24,8 +24,8 @@ class TimeoutHTTPAdapter(HTTPAdapter):
         return super().send(request, **kwargs)
     
 class RequestsSession:
-    MIN_REQUEST_GAP = 0.9 #seconds
-    last_request_time = None
+    MIN_REQUEST_GAP: float = 0.9 #seconds
+    last_request_time: float = time.time()
     
     def __init__(self, log: bool = False, retries: int = 5, 
                     log_level: Literal['debug', 'info', 'error'] = 'info') -> None:
@@ -81,38 +81,37 @@ class RequestsSession:
         return self.session
     
     def get(self, *args, **kwargs) -> requests.Response:
-        min_req_gap = self.MIN_REQUEST_GAP
-        if self.last_request_time is not None:
-            elapsed_time = time.time() - self.last_request_time
-            if elapsed_time < min_req_gap:
-                time.sleep(min_req_gap - elapsed_time)
+        min_req_gap: float = self.MIN_REQUEST_GAP
+        elapsed_time: float = time.time() - self.last_request_time
+        if elapsed_time < min_req_gap:
+            time.sleep(min_req_gap - elapsed_time)
         self.last_request_time = time.time()
         return self.session.get(*args, **kwargs)
     
     def bulk_get(self, urls: list[str], *args, **kwargs) -> list[requests.Response]:
-        duplicate_list = urls[:]
+        duplicate_list: list[str] = urls[:]
         random.shuffle(duplicate_list)  #shuffle to prevent scrape detection
         
-        req = {}
+        req:dict = {}
         for url in duplicate_list:
             req[url] = self.get(url, *args, **kwargs)
         return [req[url] for url in urls]
     
     def _set_default_headers(self) -> None:
         _header = {
-            'User-Agent': ('Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-                            'AppleWebKit/537.36 (KHTML, like Gecko) '
-                            'Chrome/91.0.4472.124 Safari/537.36'),
+            'User-Agent': ('Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) '
+                            'Gecko/20100101 Firefox/117.0'),
             'Accept': ('text/html,application/xhtml+xml,application/xml;q=0.9,'
-                        'image/avif,image/webp,*/*;q=0.8'),
+                        'image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9'),
             'Accept-Language': 'en-CA,en-US;q=0.7,en;q=0.3',
+            "Accept-Encoding": "gzip, deflate, br", 
             'Connection': 'keep-alive',
             'Referer': 'https://www.google.com/',
             'Upgrade-Insecure-Requests': '1',
             'Sec-Fetch-Dest': 'document',
             'Sec-Fetch-Mode': 'navigate',
             'Sec-Fetch-Site': 'none',
-            'Sec-Fetch-User': '?1'
+            'Sec-Fetch-User': '?1',
             }
         self.update_header(header=_header)
     

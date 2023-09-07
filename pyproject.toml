@@ -4,6 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "ak_requests"
+requires-python = ">=3.11.0"
 authors = [{name = "Arun Kishore", email = "pypi@rpakishore.co.in"}]
 readme = "README.md"
 license = {file = "LICENSE"}
