@@ -2,3 +2,4 @@
 __version__ = "0.0.1"
 
 from ak_requests.request import RequestsSession
+from ak_requests.beautifulsoup import soupify

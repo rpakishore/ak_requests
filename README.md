@@ -91,7 +91,7 @@ session.update_header({'Connection': 'keep-alive'})
 session.update_cookies([{'name':'has_recent_activity', 'value':'1'}])
 
 # Get requests
-session.get('https://reqres.in/api/users?page=2', data={}, proxies = {} ) # Can accept any requests parameters
+res = session.get('https://reqres.in/api/users?page=2', data={}, proxies = {} ) # Can accept any requests parameters
 
 # Change min time bet. requests
 session.MIN_REQUEST_GAP = 1.5 # seconds
@@ -100,6 +100,10 @@ session.MIN_REQUEST_GAP = 1.5 # seconds
 urls = ['https://reqres.in/api/users?page=2', 'https://reqres.in/api/unknown']
 responses = session.bulk_get(urls)
 
+# use beautifulsoup
+from ak_requests import soupify
+res = session.get('https://reqres.in/api/users?page=2')
+soup = soupify(res)
 ```
 
 <!-- Roadmap -->

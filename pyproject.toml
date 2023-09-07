@@ -11,8 +11,8 @@ license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: MIT License"]
 dynamic = ["version", "description"]
 dependencies = [
-    "requests",   #request_package
-    "beautifulsoup4",   #request_package
+    "requests",
+    "beautifulsoup4",
 ]
 
 [project.optional-dependencies]
