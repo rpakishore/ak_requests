@@ -106,6 +106,12 @@ responses = session.bulk_get(urls)
 from ak_requests import soupify
 res = session.get('https://reqres.in/api/users?page=2')
 soup = soupify(res)
+
+## or 
+soup, res = session.soup('https://reqres.in/api/users?page=2')
+
+## Also works for bulk requests
+soups, ress = session.bulk_soup(urls)
 ```
 
 <!-- Roadmap -->
