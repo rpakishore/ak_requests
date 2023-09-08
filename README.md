@@ -111,7 +111,7 @@ soup = soupify(res)
 <!-- Roadmap -->
 ## 4. Roadmap
 
-- [ ] Add beautifulsoup integration
+- [x] Add beautifulsoup integration
 - [ ] Proxy
 
 <!-- License -->

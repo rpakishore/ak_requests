@@ -5,6 +5,7 @@ import time
 import random
 from ak_requests.logger import Log
 from typing import Literal
+from bs4 import BeautifulSoup
 
 DEFAULT_TIMEOUT_s = 5 #seconds
 
@@ -124,3 +125,14 @@ class RequestsSession:
         self.session.cookies.update({c['name']: c['value'] for c in cookies})
         self._debug('session cookies updated')
         return self.session
+    
+    def soup(self, url: str, *args, **kwargs) -> tuple[BeautifulSoup, requests.Response]:
+        res: requests.Response = self.get(url, *args, **kwargs)
+        soup = BeautifulSoup(res.text, 'html.parser')
+        return soup, res
+
+    def bulk_soup(self, urls: list[str], *args, 
+                  **kwargs) -> tuple[list[BeautifulSoup], list[requests.Response]]:
+        ress: list[requests.Response] = self.bulk_get(urls, *args, **kwargs)
+        soups = [BeautifulSoup(res.text, 'html.parser') for res in ress]
+        return soups, ress
