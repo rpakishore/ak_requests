@@ -18,6 +18,8 @@
 
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/rpakishore/ak_requests)
 ![GitHub last commit](https://img.shields.io/github/last-commit/rpakishore/ak_requests)
+<!-- [![tests](https://github.com/rpakishore/ak_requests/actions/workflows/test.yml/badge.svg)](https://github.com/rpakishore/ak_requests/actions/workflows/test.yml) -->
+
 <!-- Table of Contents -->
 <h2>Table of Contents</h2>
 
@@ -54,7 +56,7 @@
 
 #### 2.1.1. Production
 
-Install with flit
+Download the repo and install with flit
 
 ```bash
 pip install flit
