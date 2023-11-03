@@ -13,6 +13,7 @@ dynamic = ["version", "description"]
 dependencies = [
     "requests",
     "beautifulsoup4",
+    "yt-dlp"
 ]
 
 [project.optional-dependencies]

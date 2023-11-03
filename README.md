@@ -112,6 +112,24 @@ soup, res = session.soup('https://reqres.in/api/users?page=2')
 
 ## Also works for bulk requests
 soups, ress = session.bulk_soup(urls)
+
+# Download files
+## Check if file is downloadble
+session.downloadble('https://www.youtube.com/watch?v=9bZkp7q19f0')  #False
+
+session.downloadble('http://google.com/favicon.ico') #True
+
+session.download(
+  url = 'http://google.com/favicon.ico',  #URL to download
+  fifopath='C:\\', #Can be folderpath, filename or filepath. If existing folder specified - will extract filename from url contents
+  confirm_downloadble = False #Will return `None`, if url not downloadble
+)
+
+# Download videos
+from pathlib import Path
+video_info = session.video(url='https://www.youtube.com/watch?v=BaW_jenozKc', 
+              folderpath=Path('.'),
+              audio_only=False) #Downloads the video to specified path and returns dict of video info
 ```
 
 <!-- Roadmap -->

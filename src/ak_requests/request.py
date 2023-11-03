@@ -6,6 +6,10 @@ import random
 from ak_requests.logger import Log
 from typing import Literal
 from bs4 import BeautifulSoup
+from pathlib import Path
+import re
+import urllib.parse
+from yt_dlp import YoutubeDL
 
 DEFAULT_TIMEOUT_s = 5 #seconds
 
@@ -136,3 +140,90 @@ class RequestsSession:
         ress: list[requests.Response] = self.bulk_get(urls, *args, **kwargs)
         soups = [BeautifulSoup(res.text, 'html.parser') for res in ress]
         return soups, ress
+    
+    def download(self, url: str, fifopath: str|Path, confirm_downloadble: bool = False,**kwargs) -> Path|None:
+        """Downloads file from url
+
+        Args:
+            url (str): Url to download
+            fifopath (str | Path): Filepath/Filename/FolderPath
+            confirm_downloadble (bool, optional): Download only if `content-type` is downloadble. Defaults to False.
+
+        Returns:
+            Path|None: Downloaded filepath. `None` if not-downloadable.
+        """
+        
+        # Confirm downloadble
+        if confirm_downloadble:
+            if not self.downloadble(url):
+                return None
+
+        # Get filename
+        _fifopath: Path = Path(str(fifopath))
+        if _fifopath.is_dir():
+            filepath: Path = _fifopath / self._filename_from_url(url)
+        else:
+            filepath: Path = _fifopath
+        
+        # Download
+        with self.get(url, stream=True,**kwargs) as r:
+            with open(filepath, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=8192):
+                    f.write(chunk)
+        
+        return filepath
+    
+    def downloadble(self, url: str) -> bool:
+        """Ensures the `content-type` of specified url is downloadable
+
+        Args:
+            url (str): Download URL
+
+        Returns:
+            bool: If the url content is downloadble
+        """
+        headers = self.session.head(url, allow_redirects=True).headers
+        content_type: str|None = headers.get('content-type')
+        if content_type is None:
+            return True
+        elif content_type.lower() in {'text', 'html'}:
+            return False
+        return True
+    
+    def _filename_from_url(self, url: str) -> str:
+        headers = self.session.head(url, allow_redirects=True).headers
+        cd: str|None = headers.get('content-disposition')
+        if cd:
+            fname = re.findall('filename=(.+)', cd)
+            if len(fname) != 0:
+                return fname[0]
+        
+        name: str = url.rsplit('/', 1)[1]
+        
+        return urllib.parse.unquote_plus(name)
+    
+    def video(self, url: str, folderpath: Path = Path('.'), audio_only: bool=False) -> dict:
+        #Get video info
+        with YoutubeDL({}) as ydl:
+            info = ydl.extract_info(url, download=False)
+
+            video_info= ydl.sanitize_info(info)
+        
+        if audio_only:
+            ydl_opts = {
+                'format': 'm4a/bestaudio/best',
+                'postprocessors': [{  # Extract audio using ffmpeg
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'm4a',
+                }]
+            }
+        else:
+            filename = folderpath.absolute() / '%(title)s.%(ext)s'
+            ydl_opts = {
+                'outtmpl':str(filename),
+            }
+            
+        with YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
+        
+        return video_info # type: ignore
