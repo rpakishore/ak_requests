@@ -18,6 +18,7 @@
 
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/rpakishore/ak_requests)
 ![GitHub last commit](https://img.shields.io/github/last-commit/rpakishore/ak_requests)
+[![tests](https://github.com/rpakishore/ak_requests/actions/workflows/test.yml/badge.svg)](https://github.com/rpakishore/ak_requests/actions/workflows/test.yml)
 <!-- [![tests](https://github.com/rpakishore/ak_requests/actions/workflows/test.yml/badge.svg)](https://github.com/rpakishore/ak_requests/actions/workflows/test.yml) -->
 
 <!-- Table of Contents -->
