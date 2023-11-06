@@ -46,6 +46,7 @@
 - Bulk requests handling
 - Built-in retries and timeouts
 - Can log processes to file
+- Handles downloads of files/videos
 
 <!-- Getting Started -->
 ## 2. Getting Started
@@ -152,8 +153,6 @@ Project Link: [https://github.com/rpakishore/ak_requests](https://github.com/rpa
 
 <!-- Acknowledgments -->
 ## 7. Acknowledgements
-
-Use this section to mention useful resources and libraries that you have used in your projects.
 
 - [Awesome README Template](https://github.com/Louis3797/awesome-readme-template/blob/main/README-WITHOUT-EMOJI.md)
 - [Shields.io](https://shields.io/)
