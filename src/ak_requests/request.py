@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 import urllib.parse
 from yt_dlp import YoutubeDL
+import pickle
 
 DEFAULT_TIMEOUT_s = 5 #seconds
 
@@ -243,3 +244,19 @@ class RequestsSession:
             ydl.download([url])
         
         return video_info # type: ignore
+    
+    def save_session(self, file_path: str):
+        """Serialize and save the session object to a file."""
+        with open(file_path, 'wb') as file:
+            pickle.dump(self.session, file)
+        self._info(f'Session state saved to {file_path}')
+
+    @classmethod
+    def load_session(cls, file_path: str, log: bool = False, retries: int = 5,
+                     log_level: Literal['debug', 'info', 'error'] = 'info') -> 'RequestsSession':
+        """Load a serialized session object from a file."""
+        instance = cls(log=log, retries=retries, log_level=log_level)
+        with open(file_path, 'rb') as file:
+            instance.session = pickle.load(file)
+        instance._info(f'Session state loaded from {file_path}')
+        return instance

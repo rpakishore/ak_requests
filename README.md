@@ -48,6 +48,8 @@
 - Built-in retries and timeouts
 - Can log processes to file
 - Handles downloads of files/videos
+- Implemented default rate-limiting checks and process
+- Session objects are serialized to be able to save/load sessions from file
 
 <!-- Getting Started -->
 ## 2. Getting Started
@@ -132,6 +134,13 @@ from pathlib import Path
 video_info = session.video(url='https://www.youtube.com/watch?v=BaW_jenozKc', 
               folderpath=Path('.'),
               audio_only=False) #Downloads the video to specified path and returns dict of video info
+
+# Save/Restore session to/from file
+## Save the session state to a file
+session.save_session('session_state.pkl')
+
+## Later, you can load the session state back
+restored_session = RequestsSession.load_session('session_state.pkl')
 ```
 
 <!-- Roadmap -->
