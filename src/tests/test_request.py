@@ -35,3 +35,8 @@ class TestRequestsSession:
         requests_session.get('https://httpbin.org/cookies/set', params=send_cookie)
         cookies: dict = requests_session.get("http://httpbin.org/cookies").json()
         assert cookies == {'cookies': send_cookie}
+        
+    def test_downloadble(self, requests_session):
+        assert requests_session.downloadble("https://httpbin.org/image/jpeg") is True
+    
+    
