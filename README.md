@@ -50,6 +50,8 @@
 - Handles downloads of files/videos
 - Implemented default rate-limiting checks and process
 - Session objects are serialized to be able to save/load sessions from file
+- Can choose to handle exceptions or skip it completely with `RAISE_EXCEPTIONS` attribute
+- Can support both basic `.basic_auth()` and OAuth `.oauth2_auth()` authentications.
 
 <!-- Getting Started -->
 ## 2. Getting Started
@@ -142,6 +144,10 @@ session.save_session('session_state.pkl')
 
 ## Later, you can load the session state back
 restored_session = RequestsSession.load_session('session_state.pkl')
+
+# Authentication
+session.basic_auth(username="johndoe", password="12345678") ## basic auth
+session.oauth2_auth(token='x0-xxxxxxxxxxxxxxxxxxxxxxxx')    ## OAuth authentication
 ```
 
 <!-- Roadmap -->

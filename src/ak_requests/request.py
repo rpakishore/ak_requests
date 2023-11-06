@@ -282,3 +282,15 @@ class RequestsSession:
             instance.session = pickle.load(file)
         instance._info(f'Session state loaded from {file_path}')
         return instance
+    
+    def basic_auth(self, username: str, password: str) -> requests.Session:
+        """Set up Basic Authentication for the session."""
+        self.session.auth = (username, password)
+        self._debug('Basic Authentication enabled')
+        return self.session
+
+    def oauth2_auth(self, token: str) -> requests.Session:
+        """Set up OAuth2 Authentication for the session."""
+        self.session.headers['Authorization'] = f'Bearer {token}'
+        self._debug('OAuth2 Authentication enabled')
+        return self.session
