@@ -41,10 +41,23 @@ class RequestsSession:
         self.session: Session = requests.Session()
         self._set_default_headers()
         self._set_default_retry_adapter(retries)
+        self.rate_limit_remaining = None
+        self.rate_limit_reset = None
         
         self._info(f'Session initialized ({retries=}, {self.MIN_REQUEST_GAP=}, )')
         return None
     
+    def check_rate_limit(self) -> None:
+        if self.rate_limit_remaining is not None and self.rate_limit_reset is not None:
+            remaining_time = self.rate_limit_reset - time.time()
+            if remaining_time > 0:
+                time.sleep(remaining_time)
+                
+    def update_rate_limit(self, response: requests.Response) -> None:
+        if 'X-RateLimit-Remaining' in response.headers and 'X-RateLimit-Reset' in response.headers:
+            self.rate_limit_remaining = int(response.headers['X-RateLimit-Remaining'])
+            self.rate_limit_reset = int(response.headers['X-RateLimit-Reset'])
+
     def set_loglevel(self, level: Literal['debug', 'info', 'error'] = "info") -> None:
         if self.log is not None:
             match level.lower().strip():
@@ -91,7 +104,10 @@ class RequestsSession:
         if elapsed_time < min_req_gap:
             time.sleep(min_req_gap - elapsed_time)
         self.last_request_time = time.time()
-        return self.session.get(*args, **kwargs)
+        self.check_rate_limit()
+        response: requests.Response = self.session.get(*args, **kwargs)
+        self.update_rate_limit(response)
+        return response
     
     def bulk_get(self, urls: list[str], *args, **kwargs) -> list[requests.Response]:
         duplicate_list: list[str] = urls[:]
