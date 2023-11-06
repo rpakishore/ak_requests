@@ -32,6 +32,7 @@ class TimeoutHTTPAdapter(HTTPAdapter):
 class RequestsSession:
     MIN_REQUEST_GAP: float = 0.9 #seconds
     last_request_time: float = time.time()
+    RAISE_ERRORS: bool = True
     
     def __init__(self, log: bool = False, retries: int = 5, 
                     log_level: Literal['debug', 'info', 'error'] = 'info') -> None:
@@ -100,15 +101,29 @@ class RequestsSession:
         return self.session
     
     def get(self, *args, **kwargs) -> requests.Response:
-        min_req_gap: float = self.MIN_REQUEST_GAP
-        elapsed_time: float = time.time() - self.last_request_time
-        if elapsed_time < min_req_gap:
-            time.sleep(min_req_gap - elapsed_time)
-        self.last_request_time = time.time()
-        self.check_rate_limit()
-        response: requests.Response = self.session.get(*args, **kwargs)
-        self.update_rate_limit(response)
-        return response
+        try:
+            min_req_gap: float = self.MIN_REQUEST_GAP
+            elapsed_time: float = time.time() - self.last_request_time
+            if elapsed_time < min_req_gap:
+                time.sleep(min_req_gap - elapsed_time)
+            self.last_request_time = time.time()
+            self.check_rate_limit()
+            response: requests.Response = self.session.get(*args, **kwargs)
+            self._info(
+                    f"GET request to {args}, Status: {response.status_code}, Response: {response.text[:100]}"
+                )
+            self.update_rate_limit(response)
+            return response
+        
+        except requests.RequestException as e:
+            self._handle_request_exception(e)
+            return None # type: ignore
+    
+    def _handle_request_exception(self, exception: Exception):
+        self._error(f"Request Exception: {exception}")
+        # Raise or handle the exception as per your requirement
+        if self.RAISE_ERRORS:
+            raise exception
     
     def bulk_get(self, urls: list[str], *args, **kwargs) -> list[requests.Response]:
         duplicate_list: list[str] = urls[:]
@@ -116,7 +131,14 @@ class RequestsSession:
         
         req:dict = {}
         for url in duplicate_list:
-            req[url] = self.get(url, *args, **kwargs)
+            try:
+                req[url] = self.get(url, *args, **kwargs)
+            except Exception as e:
+                if not self.RAISE_ERRORS:
+                    req[url] = None
+                else:
+                    raise e
+                
         return [req[url] for url in urls]
     
     def _set_default_headers(self) -> None:
@@ -253,7 +275,7 @@ class RequestsSession:
 
     @classmethod
     def load_session(cls, file_path: str, log: bool = False, retries: int = 5,
-                     log_level: Literal['debug', 'info', 'error'] = 'info') -> 'RequestsSession':
+                    log_level: Literal['debug', 'info', 'error'] = 'info') -> 'RequestsSession':
         """Load a serialized session object from a file."""
         instance = cls(log=log, retries=retries, log_level=log_level)
         with open(file_path, 'rb') as file:

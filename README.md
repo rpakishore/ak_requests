@@ -90,6 +90,10 @@ from ak_requests import RequestsSession
 # Initialize session
 session = RequestsSession(log=False, retries=5, log_level='error') 
 
+## Can update session level variables
+session.MIN_REQUEST_GAP = 1.5   # seconds, Change min time bet. requests
+session.RAISE_ERRORS = False    # raises RequestErrors, else returns None; defaults to True
+
 # Update custom header
 session.update_header({'Connection': 'keep-alive'})
 
@@ -98,9 +102,6 @@ session.update_cookies([{'name':'has_recent_activity', 'value':'1'}])
 
 # Get requests
 res = session.get('https://reqres.in/api/users?page=2', data={}, proxies = {} ) # Can accept any requests parameters
-
-# Change min time bet. requests
-session.MIN_REQUEST_GAP = 1.5 # seconds
 
 # Make bulk requests
 urls = ['https://reqres.in/api/users?page=2', 'https://reqres.in/api/unknown']

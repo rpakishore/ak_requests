@@ -38,5 +38,14 @@ class TestRequestsSession:
         
     def test_downloadble(self, requests_session):
         assert requests_session.downloadble("https://httpbin.org/image/jpeg") is True
-    
-    
+        
+    def test_bulkget(self, requests_session):
+        urls: list[str] = [
+            'https://httpbin.org/get?val1=1&val2=2',
+            'https://httpbin.org/get?val1=3&val2=4',
+            'https://httpbin.org/get?val1=5&val2=6'
+            ]
+        responses = requests_session.bulk_get(urls=urls)
+        assert responses[0].json().get('args') == {'val1': '1', 'val2': '2'}
+        assert responses[1].json().get('args') == {'val1': '3', 'val2': '4'}
+        assert responses[2].json().get('args') == {'val1': '5', 'val2': '6'}
