@@ -153,8 +153,11 @@ session.oauth2_auth(token='x0-xxxxxxxxxxxxxxxxxxxxxxxx')    ## OAuth authenticat
 <!-- Roadmap -->
 ## 4. Roadmap
 
-- [x] Add beautifulsoup integration
 - [ ] Proxy
+- [ ] Asynchronous Requests
+- [ ] Response Caching
+- [ ] Request Preprocessing and Postprocessing
+- [ ] File Upload Support
 
 <!-- License -->
 ## 5. License
