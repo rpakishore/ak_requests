@@ -1,6 +1,8 @@
 #myLog.py
-import logging, getpass, time
+import getpass
+import logging
 from pathlib import Path
+import time
 
 class Log(object):
     #class CALog(logging.Logger):

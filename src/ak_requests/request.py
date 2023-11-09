@@ -1,16 +1,18 @@
+from bs4 import BeautifulSoup
 import requests
 from requests import Session
 from requests.adapters import HTTPAdapter, Retry
-import time
-import random
-from ak_requests.logger import Log
-from typing import Literal
-from bs4 import BeautifulSoup
-from pathlib import Path
-import re
-import urllib.parse
 from yt_dlp import YoutubeDL
+
+from pathlib import Path
 import pickle
+import random
+import re
+import time
+from typing import Literal
+import urllib.parse
+
+from ak_requests.logger import Log
 
 DEFAULT_TIMEOUT_s = 5 #seconds
 
