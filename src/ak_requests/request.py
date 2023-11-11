@@ -31,7 +31,7 @@ class TimeoutHTTPAdapter(HTTPAdapter):
             kwargs["timeout"] = self.timeout
         return super().send(request, **kwargs)
     
-class RequestsSession:
+class RequestsSession(Session):
     MIN_REQUEST_GAP: float = 0.9 #seconds
     last_request_time: float = time.time()
     RAISE_ERRORS: bool = True
@@ -42,7 +42,8 @@ class RequestsSession:
         self.log: Log | None = Log() if log else None
         self.set_loglevel(log_level)
         
-        self.session: Session = requests.Session()
+        super().__init__()
+        #self.session: Session = requests.Session()
         self._set_default_headers()
         self._set_default_retry_adapter(retries)
         self.rate_limit_remaining = None
@@ -96,12 +97,12 @@ class RequestsSession:
                         backoff_factor=0.5,
                         status_forcelist=[429, 500, 502, 503, 504]
                         )
-        self.session.mount('http://', TimeoutHTTPAdapter(max_retries=retries))
-        self.session.mount('https://', TimeoutHTTPAdapter(max_retries=retries))
+        self.mount('http://', TimeoutHTTPAdapter(max_retries=retries))
+        self.mount('https://', TimeoutHTTPAdapter(max_retries=retries))
         
         self._debug('Default retry adapters loaded')
-        return self.session
-    
+        return self
+
     def get(self, *args, **kwargs) -> requests.Response:
         try:
             min_req_gap: float = self.MIN_REQUEST_GAP
@@ -110,7 +111,7 @@ class RequestsSession:
                 time.sleep(min_req_gap - elapsed_time)
             self.last_request_time = time.time()
             self.check_rate_limit()
-            response: requests.Response = self.session.get(*args, **kwargs)
+            response: requests.Response = super().get(*args, **kwargs)
             self._info(
                     f"GET request to {args}, Status: {response.status_code}, Response: {response.text[:100]}"
                 )
@@ -162,14 +163,14 @@ class RequestsSession:
         self.update_header(header=_header)
     
     def update_header(self, header: dict) -> requests.Session:
-        self.session.headers.update(header)
+        self.headers.update(header)
         self._debug('session header updated')
-        return self.session
+        return self
     
     def update_cookies(self, cookies: list[dict]) -> requests.Session:
-        self.session.cookies.update({c['name']: c['value'] for c in cookies})
+        self.cookies.update({c['name']: c['value'] for c in cookies})
         self._debug('session cookies updated')
-        return self.session
+        return self
     
     def soup(self, url: str, *args, **kwargs) -> tuple[BeautifulSoup, requests.Response]:
         res: requests.Response = self.get(url, *args, **kwargs)
@@ -223,7 +224,7 @@ class RequestsSession:
         Returns:
             bool: If the url content is downloadble
         """
-        headers = self.session.head(url, allow_redirects=True).headers
+        headers = self.head(url, allow_redirects=True).headers
         content_type: str|None = headers.get('content-type')
         if content_type is None:
             return True
@@ -232,7 +233,7 @@ class RequestsSession:
         return True
     
     def _filename_from_url(self, url: str) -> str:
-        headers = self.session.head(url, allow_redirects=True).headers
+        headers = self.head(url, allow_redirects=True).headers
         cd: str|None = headers.get('content-disposition')
         if cd:
             fname = re.findall('filename=(.+)', cd)
@@ -272,7 +273,7 @@ class RequestsSession:
     def save_session(self, file_path: str):
         """Serialize and save the session object to a file."""
         with open(file_path, 'wb') as file:
-            pickle.dump(self.session, file)
+            pickle.dump(self, file)
         self._info(f'Session state saved to {file_path}')
 
     @classmethod
@@ -281,18 +282,18 @@ class RequestsSession:
         """Load a serialized session object from a file."""
         instance = cls(log=log, retries=retries, log_level=log_level)
         with open(file_path, 'rb') as file:
-            instance.session = pickle.load(file)
+            instance = pickle.load(file)
         instance._info(f'Session state loaded from {file_path}')
         return instance
     
     def basic_auth(self, username: str, password: str) -> requests.Session:
         """Set up Basic Authentication for the session."""
-        self.session.auth = (username, password)
+        self.auth = (username, password)
         self._debug('Basic Authentication enabled')
-        return self.session
+        return self
 
     def oauth2_auth(self, token: str) -> requests.Session:
         """Set up OAuth2 Authentication for the session."""
-        self.session.headers['Authorization'] = f'Bearer {token}'
+        self.headers['Authorization'] = f'Bearer {token}'
         self._debug('OAuth2 Authentication enabled')
-        return self.session
+        return self
