@@ -18,6 +18,7 @@
 
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/m/rpakishore/ak_requests)
 ![GitHub last commit](https://img.shields.io/github/last-commit/rpakishore/ak_requests)
+[![tests](https://github.com/rpakishore/ak_requests/actions/workflows/test.yml/badge.svg)](https://github.com/rpakishore/ak_requests/actions/workflows/test.yml)
 <!-- [![tests](https://github.com/rpakishore/ak_requests/actions/workflows/test.yml/badge.svg)](https://github.com/rpakishore/ak_requests/actions/workflows/test.yml) -->
 
 <!-- Table of Contents -->
@@ -46,6 +47,11 @@
 - Bulk requests handling
 - Built-in retries and timeouts
 - Can log processes to file
+- Handles downloads of files/videos
+- Implemented default rate-limiting checks and process
+- Session objects are serialized to be able to save/load sessions from file
+- Can choose to handle exceptions or skip it completely with `RAISE_EXCEPTIONS` attribute
+- Can support both basic `.basic_auth()` and OAuth `.oauth2_auth()` authentications.
 
 <!-- Getting Started -->
 ## 2. Getting Started
@@ -86,6 +92,10 @@ from ak_requests import RequestsSession
 # Initialize session
 session = RequestsSession(log=False, retries=5, log_level='error') 
 
+## Can update session level variables
+session.MIN_REQUEST_GAP = 1.5   # seconds, Change min time bet. requests
+session.RAISE_ERRORS = False    # raises RequestErrors, else returns None; defaults to True
+
 # Update custom header
 session.update_header({'Connection': 'keep-alive'})
 
@@ -94,9 +104,6 @@ session.update_cookies([{'name':'has_recent_activity', 'value':'1'}])
 
 # Get requests
 res = session.get('https://reqres.in/api/users?page=2', data={}, proxies = {} ) # Can accept any requests parameters
-
-# Change min time bet. requests
-session.MIN_REQUEST_GAP = 1.5 # seconds
 
 # Make bulk requests
 urls = ['https://reqres.in/api/users?page=2', 'https://reqres.in/api/unknown']
@@ -130,13 +137,27 @@ from pathlib import Path
 video_info = session.video(url='https://www.youtube.com/watch?v=BaW_jenozKc', 
               folderpath=Path('.'),
               audio_only=False) #Downloads the video to specified path and returns dict of video info
+
+# Save/Restore session to/from file
+## Save the session state to a file
+session.save_session('session_state.pkl')
+
+## Later, you can load the session state back
+restored_session = RequestsSession.load_session('session_state.pkl')
+
+# Authentication
+session.basic_auth(username="johndoe", password="12345678") ## basic auth
+session.oauth2_auth(token='x0-xxxxxxxxxxxxxxxxxxxxxxxx')    ## OAuth authentication
 ```
 
 <!-- Roadmap -->
 ## 4. Roadmap
 
-- [x] Add beautifulsoup integration
 - [ ] Proxy
+- [ ] Asynchronous Requests
+- [ ] Response Caching
+- [ ] Request Preprocessing and Postprocessing
+- [ ] File Upload Support
 
 <!-- License -->
 ## 5. License
@@ -152,8 +173,6 @@ Project Link: [https://github.com/rpakishore/ak_requests](https://github.com/rpa
 
 <!-- Acknowledgments -->
 ## 7. Acknowledgements
-
-Use this section to mention useful resources and libraries that you have used in your projects.
 
 - [Awesome README Template](https://github.com/Louis3797/awesome-readme-template/blob/main/README-WITHOUT-EMOJI.md)
 - [Shields.io](https://shields.io/)
