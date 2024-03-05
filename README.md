@@ -90,7 +90,7 @@ Install with flit
 from ak_requests import RequestsSession
 
 # Initialize session
-session = RequestsSession(log=False, retries=5, log_level='error') 
+session = RequestsSession(log=False, retries=5, log_level='error', timeout=10) 
 
 ## Can update session level variables
 session.MIN_REQUEST_GAP = 1.5   # seconds, Change min time bet. requests
