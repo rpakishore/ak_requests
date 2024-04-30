@@ -14,12 +14,11 @@ import urllib.parse
 
 from ak_requests.logger import Log
 
-DEFAULT_TIMEOUT_s = 5 #seconds
-
 class TimeoutHTTPAdapter(HTTPAdapter):
+    DEFAULT_TIMEOUT_s = 5 #seconds
     #Courtesy of https://findwork.dev/blog/advanced-usage-python-requests-timeouts-retries-hooks/
     def __init__(self, *args, **kwargs):
-        self.timeout = DEFAULT_TIMEOUT_s
+        self.timeout = self.DEFAULT_TIMEOUT_s
         if "timeout" in kwargs:
             self.timeout = kwargs["timeout"]
             del kwargs["timeout"]
@@ -37,7 +36,8 @@ class RequestsSession(Session):
     RAISE_ERRORS: bool = True
     
     def __init__(self, log: bool = False, retries: int = 5, 
-                    log_level: Literal['debug', 'info', 'error'] = 'info') -> None:
+                    log_level: Literal['debug', 'info', 'error'] = 'info',
+                    timeout:float=5) -> None:
         self.retries = retries
         self.log: Log | None = Log() if log else None
         self.set_loglevel(log_level)
@@ -45,7 +45,7 @@ class RequestsSession(Session):
         super().__init__()
         #self.session: Session = requests.Session()
         self._set_default_headers()
-        self._set_default_retry_adapter(retries)
+        self.__set_default_retry_adapter(retries, timeout)
         self.rate_limit_remaining = None
         self.rate_limit_reset = None
         
@@ -92,13 +92,13 @@ class RequestsSession(Session):
     def __str__(self) -> str:
         return f"RequestsSession Class. Logging set to {self.log is not None}"
 
-    def _set_default_retry_adapter(self, max_retries: int) -> requests.Session:
+    def __set_default_retry_adapter(self, max_retries: int, timeout: float) -> requests.Session:
         retries = Retry(total=max_retries,
                         backoff_factor=0.5,
                         status_forcelist=[429, 500, 502, 503, 504]
                         )
-        self.mount('http://', TimeoutHTTPAdapter(max_retries=retries))
-        self.mount('https://', TimeoutHTTPAdapter(max_retries=retries))
+        self.mount('http://', TimeoutHTTPAdapter(max_retries=retries, timeout=timeout))
+        self.mount('https://', TimeoutHTTPAdapter(max_retries=retries, timeout=timeout))
         
         self._debug('Default retry adapters loaded')
         return self
