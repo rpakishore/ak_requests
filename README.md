@@ -28,23 +28,25 @@
   - [1.1. Features](#11-features)
 - [2. Getting Started](#2-getting-started)
   - [2.1. Installation](#21-installation)
-    - [2.1.1. Production](#211-production)
-    - [2.1.2. Development](#212-development)
 - [3. Usage](#3-usage)
+  - [3.1. Create and use session](#31-create-and-use-session)
+  - [3.2. Beautifulsoup](#32-beautifulsoup)
+  - [3.3. Download files](#33-download-files)
+  - [3.4. Other Functionality](#34-other-functionality)
 - [4. Roadmap](#4-roadmap)
 - [5. License](#5-license)
 - [6. Contact](#6-contact)
-- [7. Acknowledgements](#7-acknowledgements)
 
 <!-- About the Project -->
 ## 1. About the Project
 
-`ak_requests` is a Python package that provides an interface for automating requests tasks using `requests` package. It comes with quality of life improvements like retires, custom redirects, spacing out requests and shuffling requests to not trigger anti-bot measures 
+`ak_requests` is a Python package that provides an interface for automating requests tasks using `requests` package. It comes with quality of life improvements like retires, custom redirects, spacing out requests and shuffling requests to not trigger anti-bot measures.
 
 <!-- Features -->
 ### 1.1. Features
 
 - Bulk requests handling
+- Retry strategies including exponential back-off
 - Built-in retries and timeouts
 - Can log processes to file
 - Handles downloads of files/videos
@@ -60,31 +62,14 @@
 <!-- Installation -->
 ### 2.1. Installation
 
-#### 2.1.1. Production
-
-Download the repo and install with flit
-
 ```bash
-pip install flit
-flit install --deps production
-```
-
-Alternatively, you can use pip
-
-```bash
-pip install ak_requests
-```
-
-#### 2.1.2. Development
-
-Install with flit
-
-```bash
-  flit install --pth-file
+pip install ak_requests@git+https://github.com/rpakishore/ak_requests
 ```
 
 <!-- Usage -->
 ## 3. Usage
+
+### 3.1. Create and use session
 
 ```python
 from ak_requests import RequestsSession
@@ -109,7 +94,12 @@ res = session.get('https://reqres.in/api/users?page=2', data={}, proxies = {} ) 
 urls = ['https://reqres.in/api/users?page=2', 'https://reqres.in/api/unknown']
 responses = session.bulk_get(urls)
 
-# use beautifulsoup
+```
+
+
+### 3.2. Beautifulsoup
+
+```python
 from ak_requests import soupify
 res = session.get('https://reqres.in/api/users?page=2')
 soup = soupify(res)
@@ -120,8 +110,12 @@ soup, res = session.soup('https://reqres.in/api/users?page=2')
 ## Also works for bulk requests
 soups, ress = session.bulk_soup(urls)
 
-# Download files
-## Check if file is downloadble
+```
+
+### 3.3. Download files
+
+```python
+# Check if file is downloadble
 session.downloadble('https://www.youtube.com/watch?v=9bZkp7q19f0')  #False
 
 session.downloadble('http://google.com/favicon.ico') #True
@@ -138,6 +132,11 @@ video_info = session.video(url='https://www.youtube.com/watch?v=BaW_jenozKc',
               folderpath=Path('.'),
               audio_only=False) #Downloads the video to specified path and returns dict of video info
 
+```
+
+### 3.4. Other Functionality
+
+```python
 # Save/Restore session to/from file
 ## Save the session state to a file
 session.save_session('session_state.pkl')
@@ -146,19 +145,28 @@ session.save_session('session_state.pkl')
 restored_session = RequestsSession.load_session('session_state.pkl')
 
 # Authentication
-session.basic_auth(username="johndoe", password="12345678") ## basic auth
-session.oauth2_auth(token='x0-xxxxxxxxxxxxxxxxxxxxxxxx')    ## OAuth authentication
+session.setup_auth_basic(username="johndoe", password="12345678") ## basic auth
+session.setup_auth_oauth2(token='x0-xxxxxxxxxxxxxxxxxxxxxxxx')    ## OAuth authentication
 ```
 
 <!-- Roadmap -->
 ## 4. Roadmap
 
-- [ ] Proxy
-- [ ] Asynchronous Requests
-- [ ] Response Caching
-- [ ] Request Preprocessing and Postprocessing
-- [ ] File Upload Support
-
+- **Proxy Support**: Allow support for rotating proxy lists to manage a large volume of requests without hitting rate limits or triggering anti-bot measures. Integrate features like automatic proxy testing and failover in case of a broken proxy.
+- **Asynchronous Requests**: Implement asynchronous request handling using asyncio or aiohttp. This can significantly enhance performance when dealing with multiple concurrent requests, especially for I/O-bound tasks.
+- **Response Caching**: Add a caching layer for GET requests to avoid redundant network requests and speed up frequently accessed data retrieval. Allow users to configure the caching mechanism, cache duration, and invalidation strategies.
+- **Request Preprocessing and Postprocessing**: Introduce hooks for preprocessing and postprocessing of requests and responses. Users could modify request headers, log specific details, or automatically retry certain status codes like 429.
+- **File Upload Support**: Enable multipart/form-data requests for uploading files, which could expand the functionality to handle file transfers in both directions.
+- **Support for Additional Auth Schemes**: Beyond basic and OAuth2, consider adding support for other authentication methods, like token-based, bearer tokens, and cookie-based authentication, to broaden compatibility with different APIs.
+- **Session Management Enhancements**: Improve session handling by introducing automatic session refresh or re-authentication mechanisms, especially for OAuth tokens with limited lifespans.
+- **Download Manager with Resumable Downloads**: Enhance the file download feature to support resumable downloads for large files. This can improve robustness when downloading large datasets or videos over unreliable networks.
+- **Customizable User-Agent Spoofing**: Provide built-in options for easily rotating or randomizing User-Agent strings to bypass common anti-bot mechanisms. A customizable header interface might also enhance flexibility.
+- **API Rate Limiting Handling**: Improve rate-limiting with built-in APIs for dynamically adjusting request frequencies based on feedback (e.g., from Retry-After headers) and automatically spacing requests accordingly.
+- **Extended Logging and Monitoring**: Introduce more detailed and configurable logging options, such as logging retries, rate limits hit, request/response times, and any exceptions caught. This could help track the performance and reliability of the request handling process.
+- **Improved Error Handling**: Implement more sophisticated error classification to differentiate between recoverable and non-recoverable errors. Offer users the ability to handle or ignore specific HTTP status codes and exceptions.
+- **Interactive Progress Bars**: For file downloads or bulk requests, adding progress indicators or real-time updates for long-running tasks could improve the user experience.
+- **Built-in CLI Tool**: Create a command-line interface for ak_requests, enabling users to perform basic request tasks like GET, POST, or bulk downloads from the terminal without writing Python code.
+- 
 <!-- License -->
 ## 5. License
 
@@ -170,9 +178,3 @@ See LICENSE for more information.
 Arun Kishore - [@rpakishore](mailto:pypi@rpakishore.co.in)
 
 Project Link: [https://github.com/rpakishore/ak_requests](https://github.com/rpakishore/ak_requests)
-
-<!-- Acknowledgments -->
-## 7. Acknowledgements
-
-- [Awesome README Template](https://github.com/Louis3797/awesome-readme-template/blob/main/README-WITHOUT-EMOJI.md)
-- [Shields.io](https://shields.io/)

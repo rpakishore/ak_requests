@@ -1,7 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
 from requests import Session
-from requests.adapters import HTTPAdapter, Retry
 from yt_dlp import YoutubeDL
 
 from pathlib import Path
@@ -13,23 +12,8 @@ from typing import Literal
 import urllib.parse
 
 from ak_requests.logger import Log
+from ak_requests.adapters import TimeoutHTTPAdapter
 
-class TimeoutHTTPAdapter(HTTPAdapter):
-    DEFAULT_TIMEOUT_s = 5 #seconds
-    #Courtesy of https://findwork.dev/blog/advanced-usage-python-requests-timeouts-retries-hooks/
-    def __init__(self, *args, **kwargs):
-        self.timeout = self.DEFAULT_TIMEOUT_s
-        if "timeout" in kwargs:
-            self.timeout = kwargs["timeout"]
-            del kwargs["timeout"]
-        super().__init__(*args, **kwargs)
-
-    def send(self, request, **kwargs):
-        timeout = kwargs.get("timeout")
-        if timeout is None:
-            kwargs["timeout"] = self.timeout
-        return super().send(request, **kwargs)
-    
 class RequestsSession(Session):
     MIN_REQUEST_GAP: float = 0.9 #seconds
     last_request_time: float = time.time()
@@ -43,12 +27,11 @@ class RequestsSession(Session):
         self.set_loglevel(log_level)
         
         super().__init__()
-        #self.session: Session = requests.Session()
         self._set_default_headers()
         self.__set_default_retry_adapter(retries, timeout)
         self.rate_limit_remaining = None
         self.rate_limit_reset = None
-        
+
         self._info(f'Session initialized ({retries=}, {self.MIN_REQUEST_GAP=}, )')
         return None
     
@@ -93,13 +76,8 @@ class RequestsSession(Session):
         return f"RequestsSession Class. Logging set to {self.log is not None}"
 
     def __set_default_retry_adapter(self, max_retries: int, timeout: float) -> requests.Session:
-        retries = Retry(total=max_retries,
-                        backoff_factor=0.5,
-                        status_forcelist=[429, 500, 502, 503, 504]
-                        )
-        self.mount('http://', TimeoutHTTPAdapter(max_retries=retries, timeout=timeout))
-        self.mount('https://', TimeoutHTTPAdapter(max_retries=retries, timeout=timeout))
-        
+        self.mount('http://', TimeoutHTTPAdapter(max_retries=max_retries, timeout=timeout))
+        self.mount('https://', TimeoutHTTPAdapter(max_retries=max_retries, timeout=timeout))
         self._debug('Default retry adapters loaded')
         return self
 
@@ -285,15 +263,18 @@ class RequestsSession(Session):
             instance = pickle.load(file)
         instance._info(f'Session state loaded from {file_path}')
         return instance
-    
-    def basic_auth(self, username: str, password: str) -> requests.Session:
-        """Set up Basic Authentication for the session."""
-        self.auth = (username, password)
-        self._debug('Basic Authentication enabled')
-        return self
 
-    def oauth2_auth(self, token: str) -> requests.Session:
+    def setup_auth_oauth2(self, token: str) -> requests.Session:
         """Set up OAuth2 Authentication for the session."""
         self.headers['Authorization'] = f'Bearer {token}'
         self._debug('OAuth2 Authentication enabled')
-        return self
+    
+    def setup_auth_basic(self, username: str, passwd: str):
+        """Set up basic Auth method
+
+        Args:
+            username (str): Username
+            passwd (str): Password
+        """
+        self.auth = (username, passwd)
+        self._debug('Basic Authentication enabled')
