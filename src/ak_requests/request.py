@@ -29,22 +29,39 @@ class RequestsSession(Session):
         super().__init__()
         self._set_default_headers()
         self.__set_default_retry_adapter(retries, timeout)
-        self.rate_limit_remaining = None
-        self.rate_limit_reset = None
+        
+        #prep for rate-limit-handling
+        self.rate_limit_remaining, self.rate_limit_reset, self.retry_after = None, None, None
 
         self._info(f'Session initialized ({retries=}, {self.MIN_REQUEST_GAP=}, )')
         return None
     
     def check_rate_limit(self) -> None:
-        if self.rate_limit_remaining is not None and self.rate_limit_reset is not None:
+        """Checks the rate limit and waits if necessary before making the next request."""
+        if self.rate_limit_remaining is not None and self.rate_limit_remaining <= 0:
             remaining_time = self.rate_limit_reset - time.time()
             if remaining_time > 0:
+                self._info(f"Rate limit hit, sleeping for {remaining_time:.2f} seconds.")
                 time.sleep(remaining_time)
                 
+        if self.retry_after is not None:
+            retry_wait = self.retry_after - time.time()
+            if retry_wait > 0:
+                self._info(f"Retry-After header received, sleeping for {retry_wait:.2f} seconds.")
+                time.sleep(retry_wait)
+                self.retry_after = None  # Reset after wait
+                
     def update_rate_limit(self, response: requests.Response) -> None:
+        """Updates rate limit information based on response headers."""
         if 'X-RateLimit-Remaining' in response.headers and 'X-RateLimit-Reset' in response.headers:
             self.rate_limit_remaining = int(response.headers['X-RateLimit-Remaining'])
-            self.rate_limit_reset = int(response.headers['X-RateLimit-Reset'])
+            self.rate_limit_reset = time.time() + int(response.headers['X-RateLimit-Reset'])
+
+        # Check if the Retry-After header is present
+        if 'Retry-After' in response.headers:
+            self.retry_after = time.time() + int(response.headers['Retry-After'])
+            self._info(f"Retry-After header detected, will wait for {response.headers['Retry-After']} seconds.")
+    
 
     def set_loglevel(self, level: Literal['debug', 'info', 'error'] = "info") -> None:
         if self.log is not None:
@@ -84,15 +101,16 @@ class RequestsSession(Session):
     def get(self, *args, **kwargs) -> requests.Response:
         try:
             min_req_gap: float = self.MIN_REQUEST_GAP
+            
+            #Waits
             elapsed_time: float = time.time() - self.last_request_time
             if elapsed_time < min_req_gap:
                 time.sleep(min_req_gap - elapsed_time)
+            self.check_rate_limit() # Check rate limits before making the request
             self.last_request_time = time.time()
-            self.check_rate_limit()
+            
             response: requests.Response = super().get(*args, **kwargs)
-            self._info(
-                    f"GET request to {args}, Status: {response.status_code}, Response: {response.text[:100]}"
-                )
+            self._info(f"GET request to {args}, Status: {response.status_code}, Response: {response.text[:100]}")
             self.update_rate_limit(response)
             return response
         
@@ -194,14 +212,7 @@ class RequestsSession(Session):
         return filepath
     
     def downloadble(self, url: str) -> bool:
-        """Ensures the `content-type` of specified url is downloadable
-
-        Args:
-            url (str): Download URL
-
-        Returns:
-            bool: If the url content is downloadble
-        """
+        """Ensures the `content-type` of specified url is downloadable"""
         headers = self.head(url, allow_redirects=True).headers
         content_type: str|None = headers.get('content-type')
         if content_type is None:

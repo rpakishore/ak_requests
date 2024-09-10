@@ -54,6 +54,7 @@
 - Session objects are serialized to be able to save/load sessions from file
 - Can choose to handle exceptions or skip it completely with `RAISE_EXCEPTIONS` attribute
 - Can support both basic `.basic_auth()` and OAuth `.oauth2_auth()` authentications.
+- Improve rate-limiting with built-in APIs for dynamically adjusting request frequencies based on feedback (e.g., from Retry-After headers) and automatically spacing requests accordingly.
 
 <!-- Getting Started -->
 ## 2. Getting Started
@@ -161,12 +162,11 @@ session.setup_auth_oauth2(token='x0-xxxxxxxxxxxxxxxxxxxxxxxx')    ## OAuth authe
 - **Session Management Enhancements**: Improve session handling by introducing automatic session refresh or re-authentication mechanisms, especially for OAuth tokens with limited lifespans.
 - **Download Manager with Resumable Downloads**: Enhance the file download feature to support resumable downloads for large files. This can improve robustness when downloading large datasets or videos over unreliable networks.
 - **Customizable User-Agent Spoofing**: Provide built-in options for easily rotating or randomizing User-Agent strings to bypass common anti-bot mechanisms. A customizable header interface might also enhance flexibility.
-- **API Rate Limiting Handling**: Improve rate-limiting with built-in APIs for dynamically adjusting request frequencies based on feedback (e.g., from Retry-After headers) and automatically spacing requests accordingly.
 - **Extended Logging and Monitoring**: Introduce more detailed and configurable logging options, such as logging retries, rate limits hit, request/response times, and any exceptions caught. This could help track the performance and reliability of the request handling process.
 - **Improved Error Handling**: Implement more sophisticated error classification to differentiate between recoverable and non-recoverable errors. Offer users the ability to handle or ignore specific HTTP status codes and exceptions.
 - **Interactive Progress Bars**: For file downloads or bulk requests, adding progress indicators or real-time updates for long-running tasks could improve the user experience.
 - **Built-in CLI Tool**: Create a command-line interface for ak_requests, enabling users to perform basic request tasks like GET, POST, or bulk downloads from the terminal without writing Python code.
-- 
+
 <!-- License -->
 ## 5. License
 
