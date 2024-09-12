@@ -8,6 +8,7 @@ class TestRequestsSession:
     def requests_session(self):
         session = RequestsSession(log=False, retries=2)
         session.MIN_REQUEST_GAP = 0.1   #Limit gap for test purposes
+        session.setup_auth_basic(username='user', passwd='hugepass')
         return session
     
     def test_get_http(self, requests_session):
@@ -49,3 +50,6 @@ class TestRequestsSession:
         assert responses[0].json().get('args') == {'val1': '1', 'val2': '2'}
         assert responses[1].json().get('args') == {'val1': '3', 'val2': '4'}
         assert responses[2].json().get('args') == {'val1': '5', 'val2': '6'}
+        
+    def test_basic_auth(self,requests_session):
+        assert requests_session.get('https://httpbin.org/basic-auth/user/hugepass').status_code == 200
