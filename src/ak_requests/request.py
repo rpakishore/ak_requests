@@ -14,7 +14,7 @@ from yt_dlp import YoutubeDL
 from ak_requests.adapters import TimeoutHTTPAdapter
 from ak_requests.logger import Log
 from ak_requests.utils import latest_useragent
-
+from ak_requests.data import Cookie
 
 class RequestsSession(Session):
     MIN_REQUEST_GAP: float = 0.9  # seconds
@@ -192,8 +192,13 @@ class RequestsSession(Session):
         self._debug("session header updated")
         return self
 
-    def update_cookies(self, cookies: list[dict]) -> requests.Session:
-        self.cookies.update({c["name"]: c["value"] for c in cookies})
+    def update_cookies(self, cookies: list[dict|Cookie]) -> requests.Session:
+        if isinstance(cookies, list[dict]):
+            self.cookies.update({c["name"]: c["value"] for c in cookies})
+        elif isinstance(cookies, list[Cookie]):
+            self.cookies.update({cookie.name: cookie.value for cookie in cookies})
+        else:
+            self.log.warning(f"cookies cannot take instance of {type(cookies)}")
         self._debug("session cookies updated")
         return self
 
