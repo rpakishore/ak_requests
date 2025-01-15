@@ -4,8 +4,8 @@ name: website
 on:
   pull_request:
     branches: [main]
-      paths:
-        - "**/src/ak_requests/**.py"
+    paths:
+      - "**/src/ak_requests/**.py"
 
 # security: restrict permissions for CI jobs.
 permissions:
