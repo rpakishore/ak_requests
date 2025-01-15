@@ -2,7 +2,7 @@ import requests
 
 
 def latest_useragent(browser: str = "chrome") -> str:
-    """Returns the latest useragent for the specified browser"""
+    """Returns the latest useragent for the specified browser based on daily list [published here](https://jnrbsn.github.io/user-agents/user-agents.json)"""
     try:
         useragents: list[str] = requests.get(
             "https://jnrbsn.github.io/user-agents/user-agents.json"

@@ -1,13 +1,17 @@
 from requests.adapters import HTTPAdapter, Retry
 
+
 class TimeoutHTTPAdapter(HTTPAdapter):
-    DEFAULT_TIMEOUT_s = 5 #seconds
-    #Courtesy of https://findwork.dev/blog/advanced-usage-python-requests-timeouts-retries-hooks/
-    def __init__(self, max_retries: int=5, *args, **kwargs):
-        retry_adapter = Retry(total=max_retries,
-                        backoff_factor=0.5,
-                        status_forcelist=[429, 500, 502, 503, 504]
-                        )
+    """Courtesy of article: [Advanced usage of Python requests - timeouts, retries, hooks](https://findwork.dev/blog/advanced-usage-python-requests-timeouts-retries-hooks/)"""
+
+    DEFAULT_TIMEOUT_s = 5  # seconds
+
+    def __init__(self, max_retries: int = 5, *args, **kwargs):
+        retry_adapter = Retry(
+            total=max_retries,
+            backoff_factor=0.5,
+            status_forcelist=[429, 500, 502, 503, 504],
+        )
         self.timeout = self.DEFAULT_TIMEOUT_s
         if "timeout" in kwargs:
             self.timeout = kwargs["timeout"]

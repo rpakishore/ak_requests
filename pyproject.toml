@@ -1,29 +1,31 @@
-[build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
-
 [project]
 name = "ak_requests"
+version = "0.1.1"
 requires-python = ">=3.11.0"
 authors = [{name = "Arun Kishore", email = "pypi@rpakishore.co.in"}]
 readme = "README.md"
 license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: MIT License"]
-dynamic = ["version", "description"]
 dependencies = [
     "requests>=2.31.0",
     "beautifulsoup4>=4.12.2",
     "yt-dlp>=2023.10.13"
 ]
 
-[project.optional-dependencies]
-test = [
-    "pytest>=7.4.3"
-]
-
-dev = [
-    "ipykernel"
-]
-
 [project.urls]
 Home = "https://github.com/rpakishore/ak_requests"
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5",
+    "ipywidgets>=8.1.5",
+    "pdoc>=15.0.1",
+    "ruff>=0.9.1",
+]
+test = [
+    "pytest>=8.3.4",
+    "pytest-cov>=6.0.0",
+]
+
+[tool.setuptools.dynamic]
+description = {file = "README.md"}

@@ -1,7 +1,8 @@
-from ak_requests.request import RequestsSession
-from requests.exceptions import RequestException, RetryError
-from unittest.mock import Mock
 import pytest
+from requests.exceptions import RetryError
+
+from ak_requests.request import RequestsSession
+
 
 class TestRequestsSession:
     @pytest.fixture(scope="module")
@@ -29,7 +30,7 @@ class TestRequestsSession:
     
     def test_check_retry(self, requests_session):
         with pytest.raises(RetryError) as _:
-            requests_session.get(f'https://httpbin.org/status/500')
+            requests_session.get('https://httpbin.org/status/500')
 
     def test_cookies(self,requests_session):
         send_cookie: dict = {'id':'test_ak_requests'}
