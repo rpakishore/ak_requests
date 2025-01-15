@@ -2,10 +2,10 @@ name: website
 
 # build the documentation whenever there are new commits on main
 on:
-  push:
+  pull_request:
     branches: [main]
-    #  paths:
-    #    - "**/src/ak_requests/**.py"
+      paths:
+        - "**/src/ak_requests/**.py"
 
 # security: restrict permissions for CI jobs.
 permissions:
