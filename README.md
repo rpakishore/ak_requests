@@ -5,13 +5,7 @@
     Requests package with QOL improvements and anti-bot detection measures
   </p>
 <h4>
-    <a href="https://github.com/rpakishore/ak_requests/">View Demo</a>
-  <span> · </span>
-    <a href="https://github.com/rpakishore/ak_requests">Documentation</a>
-  <span> · </span>
-    <a href="https://github.com/rpakishore/ak_requests/issues/">Report Bug</a>
-  <span> · </span>
-    <a href="https://github.com/rpakishore/ak_requests/issues/">Request Feature</a>
+    <a href="https://rpakishore.github.io/ak_requests/">Documentation</a>
   </h4>
 </div>
 <br />

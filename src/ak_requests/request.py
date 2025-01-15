@@ -1,3 +1,10 @@
+"""A module providing an enhanced requests Session with rate limiting and additional features.
+
+This module extends the basic requests Session class to provide additional functionality
+including rate limiting, retry handling, BeautifulSoup integration, file downloading,
+and video downloading capabilities using yt-dlp.
+"""
+
 import pickle
 import random
 import re
@@ -12,11 +19,40 @@ from requests import Session
 from yt_dlp import YoutubeDL
 
 from ak_requests.adapters import TimeoutHTTPAdapter
+from ak_requests.data import Cookie
 from ak_requests.logger import Log
 from ak_requests.utils import latest_useragent
 
 
 class RequestsSession(Session):
+    """An enhanced requests Session class with additional features and rate limiting.
+
+    This class extends the requests Session class to provide:
+    - Automatic rate limiting and request gaps
+    - Rate limit handling based on response headers
+    - Retry mechanisms with timeouts
+    - BeautifulSoup integration
+    - File and video downloading capabilities
+    - Session state persistence
+    - Multiple authentication methods
+
+    Attributes:
+        MIN_REQUEST_GAP (float): Minimum time (in seconds) between requests
+        last_request_time (float): Timestamp of the last request
+        RAISE_ERRORS (bool): Whether to raise exceptions on request errors
+        retries (int): Number of retry attempts for failed requests
+        log (Log | None): Logger instance if logging is enabled
+        rate_limit_remaining (int | None): Remaining requests allowed by rate limit
+        rate_limit_reset (float): Timestamp when rate limit resets
+        retry_after (float | None): Time to wait before next request per Retry-After header
+
+    Example:
+        >>> session = RequestsSession(log=True, retries=3)
+        >>> response = session.get('https://api.example.com/data')
+        >>> soup, response = session.soup('https://example.com')
+        >>> session.download('https://example.com/file.pdf', 'downloads/file.pdf')
+    """
+
     MIN_REQUEST_GAP: float = 0.9  # seconds
     last_request_time: float = time.time()
     RAISE_ERRORS: bool = True
@@ -28,6 +64,14 @@ class RequestsSession(Session):
         log_level: Literal["debug", "info", "error"] = "info",
         timeout: float = 5,
     ) -> None:
+        """Initialize the RequestsSession with specified configuration.
+
+        Args:
+            log: Whether to enable logging
+            retries: Number of retry attempts for failed requests
+            log_level: Logging level to use ("debug", "info", or "error")
+            timeout: Request timeout in seconds
+        """
         self.retries = retries
         self.log: Log | None = Log() if log else None
         self.set_loglevel(log_level)
@@ -66,7 +110,11 @@ class RequestsSession(Session):
                 self.retry_after = None  # Reset after wait
 
     def update_rate_limit(self, response: requests.Response) -> None:
-        """Updates rate limit information based on response headers."""
+        """Updates rate limit information based on response headers.
+
+        Args:
+            response: Response object containing rate limit headers
+        """
         if (
             "X-RateLimit-Remaining" in response.headers
             and "X-RateLimit-Reset" in response.headers
@@ -84,6 +132,11 @@ class RequestsSession(Session):
             )
 
     def set_loglevel(self, level: Literal["debug", "info", "error"] = "info") -> None:
+        """Set the logging level for the session.
+
+        Args:
+            level: Desired logging level ("debug", "info", or "error")
+        """
         if self.log is not None:
             match level.lower().strip():
                 case "debug":
@@ -125,6 +178,17 @@ class RequestsSession(Session):
         return self
 
     def get(self, *args, **kwargs) -> requests.Response:
+        """Send a GET request with rate limiting and error handling.
+
+        Extends the base Session.get() method to include rate limiting,
+        request gap enforcement, and error handling.
+
+        Returns:
+            Response object from the request
+
+        Raises:
+            RequestException: If RAISE_ERRORS is True and a request fails
+        """
         try:
             min_req_gap: float = self.MIN_REQUEST_GAP
 
@@ -153,6 +217,16 @@ class RequestsSession(Session):
             raise exception
 
     def bulk_get(self, urls: list[str], *args, **kwargs) -> list[requests.Response]:
+        """Send multiple GET requests with randomized order to avoid detection.
+
+        Args:
+            urls: List of URLs to request
+            *args: Additional positional arguments for get()
+            **kwargs: Additional keyword arguments for get()
+
+        Returns:
+            List of Response objects in the same order as input URLs
+        """
         duplicate_list: list[str] = urls[:]
         random.shuffle(duplicate_list)  # shuffle to prevent scrape detection
 
@@ -192,14 +266,29 @@ class RequestsSession(Session):
         self._debug("session header updated")
         return self
 
-    def update_cookies(self, cookies: list[dict]) -> requests.Session:
-        self.cookies.update({c["name"]: c["value"] for c in cookies})
+    def update_cookies(self, cookies: list[dict | Cookie]) -> requests.Session:
+        if isinstance(cookies, list[dict]):
+            self.cookies.update({c["name"]: c["value"] for c in cookies})
+        elif isinstance(cookies, list[Cookie]):
+            self.cookies.update({cookie.name: cookie.value for cookie in cookies})
+        else:
+            self.log.warning(f"cookies cannot take instance of {type(cookies)}")
         self._debug("session cookies updated")
         return self
 
     def soup(
         self, url: str, *args, **kwargs
     ) -> tuple[BeautifulSoup, requests.Response]:
+        """Send a GET request and parse the response with BeautifulSoup.
+
+        Args:
+            url: URL to request
+            *args: Additional positional arguments for get()
+            **kwargs: Additional keyword arguments for get()
+
+        Returns:
+            Tuple of (BeautifulSoup object, Response object)
+        """
         res: requests.Response = self.get(url, *args, **kwargs)
         soup = BeautifulSoup(res.text, "html.parser")
         return soup, res
@@ -207,6 +296,16 @@ class RequestsSession(Session):
     def bulk_soup(
         self, urls: list[str], *args, **kwargs
     ) -> tuple[list[BeautifulSoup], list[requests.Response]]:
+        """Send multiple GET requests and parse responses with BeautifulSoup.
+
+        Args:
+            urls: List of URLs to request
+            *args: Additional positional arguments for get()
+            **kwargs: Additional keyword arguments for get()
+
+        Returns:
+            Tuple of (list of BeautifulSoup objects, list of Response objects)
+        """
         ress: list[requests.Response] = self.bulk_get(urls, *args, **kwargs)
         soups = [BeautifulSoup(res.text, "html.parser") for res in ress]
         return soups, ress
@@ -218,15 +317,16 @@ class RequestsSession(Session):
         confirm_downloadble: bool = False,
         **kwargs,
     ) -> Path | None:
-        """Downloads file from url
+        """Download a file from a URL.
 
         Args:
-            url (str): Url to download
-            fifopath (str | Path): Filepath/Filename/FolderPath
-            confirm_downloadble (bool, optional): Download only if `content-type` is downloadble. Defaults to False.
+            url: URL to download from
+            fifopath: Target path for downloaded file
+            confirm_downloadble: Whether to check content-type before downloading
+            **kwargs: Additional keyword arguments for get()
 
         Returns:
-            Path|None: Downloaded filepath. `None` if not-downloadable.
+            Path to downloaded file or None if not downloadable
         """
 
         # Confirm downloadble
@@ -274,6 +374,16 @@ class RequestsSession(Session):
     def video(
         self, url: str, folderpath: Path = Path("."), audio_only: bool = False
     ) -> dict:
+        """Download video or audio from supported platforms using yt-dlp.
+
+        Args:
+            url: Video URL to download
+            folderpath: Target folder for downloaded file
+            audio_only: Whether to download only audio
+
+        Returns:
+            Dictionary containing video metadata
+        """
         # Get video info
         with YoutubeDL({}) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -302,7 +412,11 @@ class RequestsSession(Session):
         return video_info  # type: ignore
 
     def save_session(self, file_path: str):
-        """Serialize and save the session object to a file."""
+        """Save the current session state to a file.
+
+        Args:
+            file_path: Path where session state will be saved
+        """
         with open(file_path, "wb") as file:
             pickle.dump(self, file)
         self._info(f"Session state saved to {file_path}")
@@ -315,7 +429,17 @@ class RequestsSession(Session):
         retries: int = 5,
         log_level: Literal["debug", "info", "error"] = "info",
     ) -> "RequestsSession":
-        """Load a serialized session object from a file."""
+        """Load a session state from a file.
+
+        Args:
+            file_path: Path to saved session state
+            log: Whether to enable logging
+            retries: Number of retry attempts
+            log_level: Logging level to use
+
+        Returns:
+            RequestsSession instance with loaded state
+        """
         instance = cls(log=log, retries=retries, log_level=log_level)
         with open(file_path, "rb") as file:
             instance = pickle.load(file)
@@ -323,16 +447,20 @@ class RequestsSession(Session):
         return instance
 
     def setup_auth_oauth2(self, token: str) -> None:
-        """Set up OAuth2 Authentication for the session."""
+        """Configure OAuth2 authentication for the session.
+
+        Args:
+            token: OAuth2 bearer token
+        """
         self.headers["Authorization"] = f"Bearer {token}"
         self._debug("OAuth2 Authentication enabled")
 
     def setup_auth_basic(self, username: str, passwd: str) -> None:
-        """Set up basic Auth method
+        """Configure basic authentication for the session.
 
         Args:
-            username (str): Username
-            passwd (str): Password
+            username: Authentication username
+            passwd: Authentication password
         """
         self.auth = (username, passwd)
         self._debug("Basic Authentication enabled")

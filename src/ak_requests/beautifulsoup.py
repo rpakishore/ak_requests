@@ -1,5 +1,7 @@
-from bs4 import BeautifulSoup
 import requests
+from bs4 import BeautifulSoup
+
 
 def soupify(res: requests.Response) -> BeautifulSoup:
-    return BeautifulSoup(res.text, 'html.parser')
+    """Converts a response object into a BeautifulSoup object."""
+    return BeautifulSoup(res.text, "html.parser")
